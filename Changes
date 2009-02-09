@@ -1,0 +1,6 @@
+Revision history for Perl extension Win32::IEAutomation::RapidShare.
+
+0.01  Sun Feb  8 21:14:01 2009
+	- original version; created by h2xs 1.23 with options
+		-XA -n Win32::IEAutomation::RapidShare
+

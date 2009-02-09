@@ -1,0 +1,39 @@
+Win32-IEAutomation-RapidShare version 0.01
+==========================================
+
+RapidShare is great file repository. However if users don't have premium 
+account, they cannot download files in batch mode. Interactive user
+operations are involved to wait certain seconds and click links.
+
+Once you import all links, the module will take care those interactions and
+save files. 
+
+NO HACK to RapidShare. It is handled as a black box - an IE instance running 
+in background. There're some hack tips on the Internet, most of them aren't
+working well. If you find any of them is useful, please drop me a line.
+
+WWW::Mechanize is an alternative. Win32::IEAutomation is more intuitive here.
+
+There're quite a few GUI tools available, but they don't work well either.
+"Rapidshare Auto Downloader" is the one that works for me most of time.
+http://www.vsoft.ir/en/Software2
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  LWP
+  Win32::IEAutomation
+
+COPYRIGHT AND LICENCE
+
+Copyleft to universe (C) 2009 by Jing Kang <kxj@hotmail.com>

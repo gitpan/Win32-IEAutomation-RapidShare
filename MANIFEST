@@ -1,0 +1,9 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Win32-IEAutomation-RapidShare.t
+t/check.t
+lib/Win32/IEAutomation/RapidShare.pm
+rsList.txt
+META.yml                                 Module meta-data (added by MakeMaker)
