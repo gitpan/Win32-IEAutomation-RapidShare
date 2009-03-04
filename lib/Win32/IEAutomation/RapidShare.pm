@@ -9,7 +9,7 @@ use vars '@ISA';
 use Win32::IEAutomation;
 
 our @ISA = qw(Win32::IEAutomation);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $error1 = q(Error);
 my $rsMsg0 = q(The file could not be found);
@@ -99,7 +99,11 @@ sub check_rslinks {
 	$self->getButton('value:', "Check URLs")->Click;
 	sleep 1;
 
-	my @brokenURL = $self->Content() =~ /.*?File inexistent.*?(http:\/\/.*?)\<\/div\>/gsi;
+	my $rsPage = $self->Content();
+	# remove the sensitive string from javascript 
+	$rsPage =~ s/st = \"File inexistent\";//i ;
+
+	my @brokenURL = $rsPage =~ /.*?File inexistent.*?(http:\/\/.*?)\<\/div\>/gsi;
 
 	if(scalar @brokenURL > 0){
 		print "  Broken links:\n    ";
@@ -265,6 +269,7 @@ Win32::IEAutomation::RapidShare - Perl extension for downloading files hosted by
 	links        => \@rsURL,
 	loopServer   => 'yes',
 	stopIfBroken => 'yes'
+	dltool       => "wget "
   );
 
   my $url = 'http://rapidshare.com/users/ISWUF5';

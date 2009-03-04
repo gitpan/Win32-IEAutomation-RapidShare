@@ -4,3 +4,5 @@ Revision history for Perl extension Win32::IEAutomation::RapidShare.
 	- original version; created by h2xs 1.23 with options
 		-XA -n Win32::IEAutomation::RapidShare
 
+0.02  Wednesday, March 04, 2009 2:18 PM
+	- in check_rslinks, remove "File inexistent" in JavaScript
