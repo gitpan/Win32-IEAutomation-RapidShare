@@ -6,3 +6,7 @@ Revision history for Perl extension Win32::IEAutomation::RapidShare.
 
 0.02  Wednesday, March 04, 2009 2:18 PM
 	- in check_rslinks, remove "File inexistent" in JavaScript
+
+0.03  Tuesday, March 31, 2009 5:15 PM
+	- Schedule control added. Users can specify start and end time.
+	- add taskName for saving the URL list to a text file

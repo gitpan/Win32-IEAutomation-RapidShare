@@ -5,11 +5,10 @@ package Win32::IEAutomation::RapidShare;
 use strict;
 use warnings;
 use vars '@ISA';
-#use Data::Dump qw(dump);
 use Win32::IEAutomation;
 
 our @ISA = qw(Win32::IEAutomation);
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 my $error1 = q(Error);
 my $rsMsg0 = q(The file could not be found);
@@ -17,6 +16,7 @@ my $rsMsg1 = q(is already downloading a file);
 my $rsMsg2 = q(You have reached the download limit for free-users);
 my $rsMsg3 = q(You are not a Premium User and have to wait);
 my $rsMsg4 = q(Advanced download settings);	
+my $rsMsg5 = q(This file is suspected to contain illegal content);	
 
 my @dlServer;
 
@@ -41,12 +41,50 @@ sub new {
 
 	$self->{preferserver} = $obj_parms{preferserver}|| undef;
 
+	$self->{starttime}    = $obj_parms{starttime}	|| "00:00:00";
+	$self->{stoptime}     = $obj_parms{stoptime}	|| "23:59:59";
+
+	$self->{taskname}     = $obj_parms{taskname}	|| 'rapidshare';
+
 	undef $self->{loopserver} if($self->{preferserver});
 
 	_removeDupLink($self->{links});	
 
     bless $self, $class;
 	$self;
+}
+
+## -------------------------------------------------------------------
+sub modifyTime(){		#add or minus some hour
+	my $time 	= shift;
+	my $offset	= shift;
+	
+	my @tm = split /:/, $time;
+	$tm[0] =~ /0*(\d+)/;
+	$tm[0] = $1;
+
+	$tm[0] = $tm[0] - $offset;
+	$tm[0] = $tm[0] >= 0 ? $tm[0] : $tm[0]+24;
+	
+	$tm[0] = sprintf("%02d", $tm[0]);
+	join(":", @tm);
+}
+
+sub isInScheduledTime(){#judge if now() in the time range
+	my $st = shift;		#start time
+	my $et = shift;		#  end time
+
+	my $nw = _getTime();
+	
+	my @tm = split /:/, $st;
+	$tm[0] =~ /0*(\d+)/;
+	$tm[0] = $1;		#get start hour, set start hour to 00
+
+	$st = &modifyTime($st, $tm[0]);
+	$et = &modifyTime($et, $tm[0]);
+	$nw = &modifyTime($nw, $tm[0]);
+
+	return $nw ge $st && $nw le $et ? "ok" : undef;
 }
 
 sub add_rslinks {
@@ -143,6 +181,14 @@ sub downloadrs(){
 
 	my $loop=0;
 
+	#save the list for further reference
+	my $taskFile = $ie->{taskname} . '.rs.txt';
+	$taskFile = $ie->{taskname} .'.'. time . '.rs.txt' if(-e $taskFile);
+
+	open (RSTASK, ">$taskFile");
+	map {print RSTASK "$_\n"} @{$ie->{links}};
+	close RSTASK;
+
 	foreach(@{$ie->{links}}){
 		my $url = $_;
 
@@ -154,10 +200,40 @@ sub downloadrs(){
 
 		my $retry = 0;
 		while(1){
+
+			#check if current time in the scheduled time range
+			if( ! &isInScheduledTime($ie->{starttime}, $ie->{stoptime}) ){
+				print "\r  current time isn't in scheduled time range. ".$ie->{starttime}." ".$ie->{stoptime} if($ie->{debug});
+				`hostname`;
+				sleep(1);
+				print "\r" .' 'x45 if($ie->{debug});
+				_delay(180);
+				next;
+			}
+
 			$ie->gotoURL($url);
 
-			$ie->getButton('value:', "Free user")->Click;
-			sleep 1;
+			# This file is suspected to contain illegal content
+			if( $ie->PageText() =~ /$rsMsg5/i ){
+				print "  Error: This file is suspected to contain illegal content\n";
+				last;
+			}
+
+			eval{
+				$ie->getButton('value:', "Free user")->Click;
+				sleep 1;
+			};
+			if($@){	#page isn't loaded, internet might not be available, wait
+				print "\r  Free User button isn't found. Check the INTERNET access." if($ie->{debug});
+				`hostname`;
+				sleep(2);
+				print "\r" .' 'x75 if($ie->{debug});
+
+				last if($retry > 10);	#retry 10 times
+				_delay(180);
+				$retry++;
+				next;
+			}
 
 			#file doesn't exist
 			if($ie->PageText() =~ /$error1/ && $ie->PageText() =~ /$rsMsg0/i ){
@@ -190,7 +266,7 @@ sub downloadrs(){
 			#wait 50 sec
 			if( $ie->PageText() =~ /$rsMsg3/i ){
 				$ie->PageText() =~ /Still (\d+) .*/ ;
-				print "\r  free user has to wait: $1 seconds". ' 'x17 . "\n" if($ie->{debug});
+				print "\r  free user has to wait: $1 seconds". ' 'x37 . "\n" if($ie->{debug});
 				#$ie->gotoURL('javascript:jkang(c=0)');
 				_delay($1+2);
 			}
@@ -250,6 +326,11 @@ sub _delay() {
     }
 }
 
+sub _getTime(){
+	my @lc_time = localtime;
+	sprintf("%02d:%02d:%02d", @lc_time[2,1,0]);
+}
+
 1;
 __END__
 
@@ -264,12 +345,13 @@ Win32::IEAutomation::RapidShare - Perl extension for downloading files hosted by
   use Win32::IEAutomation::RapidShare;
 
   my $ie = Win32::IEAutomation::RapidShare->new(
-	visible      => 0,
+  	taskName     => 'box180FPS',
 	debug        => 1,
 	links        => \@rsURL,
 	loopServer   => 'yes',
 	stopIfBroken => 'yes'
-	dltool       => "wget "
+	startTime    => '17:02',
+	stopTime     => '09:00'
   );
 
   my $url = 'http://rapidshare.com/users/ISWUF5';
@@ -299,6 +381,10 @@ which internally contains a automation object for internet explorer.
 In addition to Win32::IEAutomation's options, RapidShare specific options are supported.
 
 =over 4
+
+=item * taskName
+
+taskName is optional. The URLs list will be saved to a text file. The default name is rapidshare.
 
 =item * visible
 
@@ -332,6 +418,14 @@ Specify the download server that users like to use for downloading.
 RapidShare hosted file has max file size limitation (200M?). Lots of big files are zipped and splitted before uploading to RapidShare. 
 So please always validate all links firstly. If any link is broken, it might not a good idea to continue to download files. You could end
 up with files that cannot be merged and uncompressed.
+
+=item * startTime
+
+Specify time to start downloading files. So users can avoid internet rush hour.
+
+=item * stopTime
+
+Specify time to stop downloading files.
 
 =back
 
