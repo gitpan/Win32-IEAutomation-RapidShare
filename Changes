@@ -10,3 +10,7 @@ Revision history for Perl extension Win32::IEAutomation::RapidShare.
 0.03  Tuesday, March 31, 2009 5:15 PM
 	- Schedule control added. Users can specify start and end time.
 	- add taskName for saving the URL list to a text file
+
+0.04  Sunday, November 08, 2009
+	- fix bug of not able to find waiting seconds due to GUI string changing
+	- if waiting period cannot find, wait 30 seconds by default

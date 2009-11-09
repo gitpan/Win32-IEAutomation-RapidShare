@@ -8,7 +8,7 @@ use vars '@ISA';
 use Win32::IEAutomation;
 
 our @ISA = qw(Win32::IEAutomation);
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $error1 = q(Error);
 my $rsMsg0 = q(The file could not be found);
@@ -233,6 +233,8 @@ sub downloadrs(){
 				_delay(180);
 				$retry++;
 				next;
+			}else{
+				#print "  Free user clicked\n" if($ie->{debug});
 			}
 
 			#file doesn't exist
@@ -265,10 +267,21 @@ sub downloadrs(){
 
 			#wait 50 sec
 			if( $ie->PageText() =~ /$rsMsg3/i ){
-				$ie->PageText() =~ /Still (\d+) .*/ ;
-				print "\r  free user has to wait: $1 seconds". ' 'x37 . "\n" if($ie->{debug});
-				#$ie->gotoURL('javascript:jkang(c=0)');
-				_delay($1+2);
+				my $waits = 30;
+				my $page = $ie->PageText();
+
+				# page content might be changed.
+				if($page =~ /Still (\d+) .*/ ){						# invalid on 11/09
+					$waits = $1;
+				}elsif($page =~ /.*?(\d+) seconds remaining.*/ ){	# valid on 11/09
+					$waits = $1;
+				}else{
+					print "  ?: don't catch the waiting period.\n" if($ie->{debug});
+					#print $page; exit;
+				}
+
+				print "\r  free user has to wait:$waits seconds". ' 'x37 . "\n" if($ie->{debug});
+				_delay($waits+2);
 			}
 
 			#start downloading

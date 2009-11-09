@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Win32-IEAutomation-RapidShare
-version:            0.03
+version:            0.04
 abstract:           Perl extension for downloading files hosted by RapidShare
 author:
     - Jing Kang <kxj@hotmail.com>
